@@ -1,0 +1,49 @@
+YAML leírófájl dokumentáció:
+---------------------------
+
+records szekció:
+---------------
+A jobb olvashatóság végett ide gyűjtjük a record leírásokat, hogy később csak hivatkozni kelljen rá.
+Ezen a szinten a többi mező értékét nem ismerjük, az aktuális mező értéke 'value' néven érhető el.
+Ha van 'convert' objektum, akkor az hajtódik végre először, utána a 'check' objektum.
+
+...
+records:
+- &legrand_megrendelo_e
+  title           : {'row': 0, 'col': 0, 'check'  : "value == 'GYÁRTÁSI LAP'"}
+
+- &legrand_gyartasi_lap_fej
+  gyartasi_rend   : {'row': 0, 'col': 2, 'check'  : "re.match('([0-9][0-9]|j[0-9]|ja|s[0-9])[0-9]{6}', value, re.IGNORECASE)"}
+  kiadas          : {'row': 0, 'col': 4}
+  rendelt_db      : {'row': 0, 'col': 8, 'convert': "int(value)"}
+  hatarido        : {'row': 0, 'col': 9, 'convert': "value.split(' ')[1]",          'check' : "re.match('[0-9][0-9]/[0-9][0-9]/[0-9][0-9]', value)"}
+...
+
+
+files szekció:
+-------------
+  name            : leíró jellegű szöveg
+  domain          : ágazat azonosító
+  filetype        : fájltípus azonító
+  path            : a CONF_PATH utáni rész, alkönyvtárakban is keres
+  check           : *record, ellenőrzi hogy a megnyitott fájl azonos típusú-e azzal, amit fel szeretnénk dolgozni.
+  worksheets      : worksheet lista
+  -
+    name          : leíró jellegű szöveg
+    filter        : regexp minta, munkalap nevekre szűr
+    insert        : doctype: az eddig összeállított dokumentumot doctype típussal el kell menteni.
+    flow          : down | right: a konténerek (boxes) egymásba ágyazódásának iránya
+    boxes         : konténerek
+    -
+      name        : leíró jellegű szöveg
+      key         : key: a dokumentumba ezzel a kulccsal írja be ezt a rekordot.
+      record      : *record, egy adatsor leírása az xls-ben.
+      offset      : [row,col]: a konténer kezdő pozíciója az előzőhöz képest.
+      next_pos    : [row,col]: a record következő pozíciója.
+      repeat      : max ennyiszer ismétli a rekord olvasását.
+      label       : a dokumentum kiírásánál használt címke.
+      filter      : a beillesztett rekordok szűrése, az aktuális rekord 'record' néven érhető el.
+      stop        : a rekordok feldolgozásának végét jelzi, az aktuális rekord 'record' néven érhető el.
+      flow        : down | right: a konténerek (boxes) egymásba ágyazódásának iránya
+      boxes       : a konténerek egymásba ágyazhatók
+      insert      : doctype: az eddig összeállított dokumentumot doctype típussal el kell menteni.

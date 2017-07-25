@@ -1,0 +1,168 @@
+params:
+  connect         : dbname=raktar user=administrator host=localhost password=Degesz1953u
+  path            : '/mnt/Teszt/'
+#  path            : '/mnt/'
+  period          : 30
+
+records:
+- &empty_row
+  field1          : {'row': 0, 'col': 0}
+  field2          : {'row': 0, 'col': 1}
+  field3          : {'row': 0, 'col': 2}
+
+- &legrand_megrendelo_e
+  title           : {'row': 0, 'col': 0, 'check'  : "value == u'GYÁRTÁSI LAP'"}
+
+- &legrand_gyartasi_lap_fej
+  rendelesszam    : {'row': 0, 'col': 2, 'check'  : "re.match('([0-9][0-9]|j[0-9]|ja|s[0-9])[0-9]{6}', value, re.IGNORECASE)"}
+  kiadas_ideje    : {'row': 0, 'col': 4}
+  rendelt_db      : {'row': 0, 'col': 8, 'convert': "int(value)"}
+  hatarido_str    : {'row': 0, 'col': 9, 'convert': "value.split(' ')[1]",          'check' : "re.match('[0-9][0-9]/[0-9][0-9]/[0-9][0-9]', value)"}
+  termekcsalad    : {'row': 1, 'col': 2}
+  termekkod       : {'row': 1, 'col': 4, 'check'  : "value!=''"}
+  megnevezes      : {'row': 2, 'col': 7, 'check'  : "value!=''"}
+  jegyzet         : {'row': 3, 'col': 8}
+  raklap          : {'row': 4, 'col': 2}
+  raklap_min      : {'row': 4, 'col': 4}
+  rakat_tipus     : {'row': 4, 'col': 8}
+  raklap_max      : {'row': 5, 'col': 4}
+
+- &legrand_muveleti_utasitas
+  muveleti_szam             : {'row': 0, 'col': 0, 'convert': "int(value)"}
+  homogen         : {'row': 0, 'col': 1, 'check'  : "re.match('[0-9]{4}', value)"}
+  megnevezes      : {'row': 0, 'col': 2, 'convert': "value.splitlines()[1]"}
+  db_p_ora        : {'row': 0, 'col': 3, 'convert': "0.0 if value=='' else value",  'check' : "type(value) is float"}
+  ossz_ido        : {'row': 0, 'col': 5, 'check'  : "type(value) is float"}
+  beall_ido       : {'row': 0, 'col': 6, 'check'  : "type(value) is float"}
+
+- &legrand_homogen
+  homogen         : {'row': 0, 'col': 1, 'check'  : "re.match('[0-9]{4}', value)"}
+  ossz_ido        : {'row': 0, 'col': 5, 'check'  : "type(value) is float"}
+  beall_ido       : {'row': 0, 'col': 6, 'check'  : "type(value) is float"}
+
+- &legrand_darabjegyzek
+  cikkszam        : {'row': 0, 'col': 0, 'convert': "value.splitlines()[0]"}
+  megnevezes      : {'row': 0, 'col': 1, 'convert': "' '.join(value.splitlines())"}
+  ossz_beepules   : {'row': 0, 'col': 2, 'check'  : "type(value) is float"}
+  bekerulesi_ar   : {'row': 0, 'col': 3, 'check'  : "type(value) is float"}
+
+- &legrand_f_raktar_fej
+  raktar          : {'row': 1, 'col': 0}
+  rendelesszam   : {'row': 1, 'col': 1}
+  termekkod       : {'row': 1, 'col': 2}
+  megnevezes      : {'row': 1, 'col': 3, 'convert': "' '.join(value.splitlines())"}
+  rendelt_db      : {'row': 1, 'col': 6}
+  hatarido        : {'row': 1, 'col': 7}
+
+- &legrand_f_raktar
+  termekkod       : {'row': 0, 'col': 0}
+  megnevezes      : {'row': 0, 'col': 1, 'convert': "' '.join(value.splitlines())"}
+  szukseges       : {'row': 0, 'col': 2}
+  kiadasra        : {'row': 0, 'col': 3}
+  menny_egyseg    : {'row': 0, 'col': 4, 'convert': "value.lower()"}
+  kiadott         : {'row': 0, 'col': 6}
+
+files:
+-
+  name            : legrand megrendelő
+  domain          : Legrand
+  filetype        : Megrendelő
+  path            : "Legrand/Megrendelők"
+  check           : *legrand_megrendelo_e
+  worksheets      :
+  -
+    name          : gyártási lap
+    filter        : '.*\.prn$'
+    insert        : Gyártási lap
+    flow          : down
+    boxes         :
+    -
+      name        : fej
+      key         : fej
+      record      : *legrand_gyartasi_lap_fej
+      offset      : [1,0]
+      next_pos    : [6,0]
+      label       : "record['rendelesszam']"
+    -
+      name        : fej utáni üres sorok
+      record      : *empty_row
+      offset      : [0,0]
+      next_pos    : [1,0]
+      repeat      : 1000
+      stop        : "record['field1'] != ''"
+    -
+      name        : műveleti utasítás, homogén, darabjegyzék
+      flow        : right
+      boxes       :
+      -
+        name      : műveleti utasítás, homogén
+        flow      : down
+        boxes     :
+        -
+          name    : műveleti utasítás
+          record  : *legrand_muveleti_utasitas
+          key     : muveleti_utasitas
+          offset  : [2,0]
+          next_pos: [1,0]
+          repeat  : 1000
+          stop    : "record['muveleti_szam'] == ''"
+        -
+          name    : homogén
+          record  : *legrand_homogen
+          key     : homogen
+          offset  : [1,0]
+          next_pos: [1,0]
+          repeat  : 1000
+          stop    : "record['homogen'] == ''"
+      -
+        name      : darabjegyzék
+        record    : *legrand_darabjegyzek
+        key       : darabjegyzek
+        offset    : [2,7]
+        next_pos  : [1,0]
+        repeat    : 1000
+        filter    : "record['cikkszam'][0] != 'S'"
+        stop      : "record['cikkszam'] == ''"
+#  -
+#    name          : f raktár
+#    filter        : '^[fF]$'
+#    insert        : F raktár
+#    flow          : down
+#    boxes         :
+#    -
+#      name        : f raktár kiadás tételek
+#      key         : f_raktar_kiadas
+#      record      : *legrand_f_raktar
+#      offset      : [0,0]
+#      next_pos    : [1,0]
+#      label       : "time.strftime('%Y-%m-%d')"
+#      repeat      : 1000
+#      filter      : "record['termekkod'] != '' and record['kiadott'] == ''"
+#
+#  -
+#    name          : f raktár
+#    filter        : '^###[fF]$'
+#    flow          : down
+#    boxes         :
+#    -
+#      name        : fej, tételek
+#      repeat      : 1000
+#      insert      : F raktár
+#      flow        : down
+#      boxes       :
+#      -
+#        name        : fej
+#        key         : fej
+#        record      : *legrand_f_raktar_fej
+#        offset      : [0,0]
+#        next_pos    : [3,0]
+#        label       : "record['rendelesszam']"
+#      -
+#        name        : f raktár kiadás tételek
+#        key         : f_raktar_kiadas
+#        record      : *legrand_f_raktar
+#        offset      : [0,0]
+#        next_pos    : [1,0]
+#        repeat      : 1000
+#        filter      : "record['termekkod'] != '' and record['kiadott'] == ''"
+#        stop        : "record['termekkod'] == 'Raktár'"
