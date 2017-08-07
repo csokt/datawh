@@ -1,7 +1,6 @@
 params:
   connect         : dbname=raktar user=administrator host=localhost password=Degesz1953u
-  path            : '/mnt/Teszt/'
-#  path            : '/mnt/'
+  path            : '/mnt/'
   period          : 30
 
 records:
@@ -41,7 +40,7 @@ records:
   beall_ido       : {'row': 0, 'col': 6, 'check'  : "type(value) is float"}
 
 - &legrand_darabjegyzek
-  cikkszam        : {'row': 0, 'col': 0, 'convert': "value.splitlines()[0]"}
+  cikkszam        : {'row': 0, 'col': 0, 'convert': "value.splitlines()[0].upper()"}
   megnevezes      : {'row': 0, 'col': 1, 'convert': "' '.join(value.splitlines())"}
   ossz_beepules   : {'row': 0, 'col': 2, 'check'  : "type(value) is float"}
   bekerulesi_ar   : {'row': 0, 'col': 3, 'check'  : "type(value) is float"}
@@ -107,10 +106,17 @@ files:
           repeat  : 1000
           stop    : "record['muveleti_szam'] == ''"
         -
+          name    : műveleti utasítás utáni üres sorok
+          record  : *empty_row
+          offset  : [0,0]
+          next_pos: [1,0]
+          repeat  : 1000
+          stop    : "record['field2'] != ''"
+        -
           name    : homogén
           record  : *legrand_homogen
           key     : homogen
-          offset  : [1,0]
+          offset  : [0,0]
           next_pos: [1,0]
           repeat  : 1000
           stop    : "record['homogen'] == ''"
